@@ -11,5 +11,13 @@ class SnpResponse {
     required this.status, 
     this.payload
   });
+
+  factory SnpResponse.fromJson(Map<String, dynamic> json){
+    return SnpResponse(
+      success: json['success'], 
+      status: json['status'], 
+      payload: json['payload']
+      );
+  }
  
 }

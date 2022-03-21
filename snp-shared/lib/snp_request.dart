@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 class SnpRequest {
 
@@ -22,5 +24,13 @@ class SnpRequest {
     this.token,
     this.timeout,
   });
+
+  Map<String, dynamic> toJson(){
+    return {
+      "token": token,
+      "request": request,
+      "timeout": timeout,
+    };
+  }
   
 }

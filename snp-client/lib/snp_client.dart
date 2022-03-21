@@ -1,9 +1,11 @@
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
 import 'package:snp_client/snp_client_options.dart';
 import 'package:snp_shared/snp_request_options.dart';
+import 'package:snp_shared/snp_response.dart';
 import 'package:snp_shared/snp_shared.dart';
 
 class SnpClient {
@@ -14,7 +16,7 @@ class SnpClient {
     _logger.info('Client is initializing');
   }
 
-  Future<DataResponse<SnpRequest>> send(
+  Future<DataResponse<SnpResponse>> send(
     String path, 
     HttpRequest httpRequest,    
     {SnpRequestOptions? requestOptions}) async {
@@ -25,8 +27,7 @@ class SnpClient {
     final request = _createRequest(
       path: path,
       httpRequest: httpRequest,
-
-
+      options: requestOptions,
     );
 
     try{
@@ -65,19 +66,64 @@ class SnpClient {
 
 
     // 2. Write to the socket with request payload.
+    socket.write(request.toJson());
 
-    // TODO: Convert request to bytes.
-    socket.write(request);
+   
+   
+    socket.listen(
+      
+      /// When socket data is received.
+      /// rawResponse - List of integers.   
+      (Uint8List rawResponse) {
+      final response = _onResponse(rawResponse);
 
-    return DataResponse.failure('Not implemeted yet');
+      // if the casting to a response object was a success
+      if (response.isSuccessful){
+        return response;
+      }
+      
+
+     }, 
+     onDone: () {
+       _logger.info('Closing socket');
+       socket.close();
+     }, 
+     onError: (e, st){
+       _logger.severe('Error occured $e, $st');
+       socket.close();
+     }, 
+     cancelOnError: true);
+
+    
   } 
+
+  DataResponse<SnpResponse> _onResponse(dynamic rawResponse){
+    try{
+      final response = SnpResponse.fromJson(rawResponse);
+
+      return DataResponse.success(response);
+    }
+    catch(e){
+      return DataResponse.failure('Error parsing response');
+    }
+
+  }
 
   // Future<EnetResponse> _sendRequest(EnetRequest request) async {
   //   /// 1. Create a socket connection with the sever.
   //   final socket = await Socket.connect(options?.baseUrl ?? request.path, options?.port ?? EnetConfig.DEFAULT_PORT);
 
   //   if (request.persist) {
-  //     _persitedSockets[request.socketId!] = socket;
+  //     _persitedSockets[reqdatauest.socketId!] = socket;
+  //   }
+
+  //   /// 2. Make a request to the server
+  //   socket.write(request.toPayload());
+
+  //   /// 3. Wait for the response
+  //   final response = EnetResponse.fromRafailure
+  //   ///equest.persist) {
+  //     _persitedSockets[reqdatauest.socketId!] = socket;
   //   }
 
   //   /// 2. Make a request to the server
@@ -87,12 +133,6 @@ class SnpClient {
   //   final response = EnetResponse.fromRafailure
   //   ///
   //   if (!request.persist) {
-  //     await socket.close();
-  //   }
-
-  //   return response;
-  // }
-
   // Stream List<int> listen(String socketId) {}
 
 }
