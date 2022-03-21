@@ -12,10 +12,15 @@ class SnpRequest {
   /// Request that the client wants the user to make.
   final HttpRequest request;
 
+  /// Number of milliseconds the client will wait for the ACK from the 
+  /// server.
+  final int? timeout;
+
   const SnpRequest({
     required this.path,
     required this.request,
     this.token,
+    this.timeout,
   });
   
 }

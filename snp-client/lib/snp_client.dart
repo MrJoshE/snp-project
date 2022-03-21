@@ -1,26 +1,23 @@
 
 import 'dart:io';
 
+import 'package:logging/logging.dart';
+import 'package:snp_client/snp_client_options.dart';
+import 'package:snp_shared/snp_request_options.dart';
 import 'package:snp_shared/snp_shared.dart';
 
-
-
-class SnpRequestOptions {
-  final String? baseUrl;
-  final int? port;
-
-  const SnpRequestOptions({this.baseUrl, this.port});
-}
-
 class SnpClient {
-  final SnpRequestOptions? options;
+  final Logger _logger = Logger('SnpClient');
+  final SnpClientOptions? options;
 
-  SnpClient({this.options});
+  SnpClient({this.options}){
+    _logger.info('Client is initializing');
+  }
 
   Future<DataResponse<SnpRequest>> send(
-    String path, {
-    required HttpRequest httpRequest,
-  }) async {
+    String path, 
+    HttpRequest httpRequest,    
+    {SnpRequestOptions? requestOptions}) async {
     if (options?.baseUrl != null) {
       path = '${options!.baseUrl}$path';
     }
@@ -28,6 +25,7 @@ class SnpClient {
     final request = _createRequest(
       path: path,
       httpRequest: httpRequest,
+
 
     );
 
@@ -49,10 +47,13 @@ class SnpClient {
   SnpRequest _createRequest({
     required String path,
     required HttpRequest httpRequest,
+    SnpRequestOptions? options,
   }) {
     final request = SnpRequest(
       path: path,
       request: httpRequest,
+      timeout: options?.timeout,
+      token: options?.token,
     );
 
     return request;
