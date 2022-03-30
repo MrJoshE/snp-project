@@ -1,6 +1,6 @@
-class SnpConfig {
+class SnpDefaultConfig {
+  static const defaultPort = 1502;
 
-  static const defaultPort =  1502;
-  static const defaultRequestTimeout =  Duration(seconds: 10);
-
+  /// Have a default timeout of 10 seconds.
+  static const defaultTimeout = 10000;
 }

@@ -5,11 +5,14 @@ version: 1.0.0
 publish_to: none
 
 environment:
-  sdk: '2.17.0'
+  sdk: ">=2.16.1"
 
 
 dependencies:
- snp_shared:
+  http: ^0.13.4
+  logging:
+  uuid: ^3.0.6
+  snp_shared:
     path: '../snp-shared'
 #   path: ^1.8.0
 
