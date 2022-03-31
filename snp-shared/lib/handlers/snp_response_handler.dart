@@ -5,7 +5,7 @@ import 'package:snp_shared/errors/snp_error.dart';
 import 'package:snp_shared/responses/responses.dart';
 
 class SnpResponseHandler {
-  static bool isLogging = true;
+  static bool isLogging = false;
 
   static log(dynamic context) {
     if (!isLogging) return;
@@ -15,6 +15,7 @@ class SnpResponseHandler {
   static const List<int> _allowedStatusCodes = [
     200,
     201,
+    400,
     401,
     403,
     405,
@@ -67,15 +68,15 @@ class SnpResponseHandler {
     }
   }
 
-  static SnpResponseValidationResponse _validateResponse(Map<String, dynamic> json) {
+  static SnpHandlerValidationResponse _validateResponse(Map<String, dynamic> json) {
     String stage = 'Null';
     // First a null check on the status of the success and status properties.
     if (json['success'] == null) {
-      return SnpResponseValidationResponse.failure('success', stage);
+      return SnpHandlerValidationResponse.failure('success', stage);
     } else if (json['status'] == null) {
-      return SnpResponseValidationResponse.failure('status', stage);
+      return SnpHandlerValidationResponse.failure('status', stage);
     } else if (json['payload'] == null) {
-      return SnpResponseValidationResponse.failure('payload', stage);
+      return SnpHandlerValidationResponse.failure('payload', stage);
     }
 
     // Check that the values are valid
@@ -83,17 +84,18 @@ class SnpResponseHandler {
 
     // Check that the properties are the correct type
     if (json['success'] is! bool) {
-      return SnpResponseValidationResponse.failure('success', stage);
+      return SnpHandlerValidationResponse.failure('success', stage);
     } else if (json['status'] is! int) {
-      return SnpResponseValidationResponse.failure('status', stage);
+      return SnpHandlerValidationResponse.failure('status', stage);
     }
 
     // Check that the status in the in the allowed values
     stage = 'Status code';
     if (!_allowedStatusCodes.contains(json['status'])) {
-      return SnpResponseValidationResponse.failure('status', stage);
+      print('${json['status']} is not an allowed status');
+      return SnpHandlerValidationResponse.failure('status', stage);
     }
 
-    return SnpResponseValidationResponse.success();
+    return SnpHandlerValidationResponse.success();
   }
 }

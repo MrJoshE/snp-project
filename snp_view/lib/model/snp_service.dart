@@ -21,7 +21,10 @@ class SnpService {
 
   Future<DataResponse<SnpServerStatus>> initialize() async {
     try {
-      await _client.client.initialize();
+      final response = await _client.client.initialize();
+      if (!response.isSuccessful) {
+        return DataResponse.failure(response.failure!);
+      }
       return DataResponse.success(const SnpServerStatus(authenticated: false, connected: true));
     } catch (e) {
       return DataResponse.failure(e.toString());

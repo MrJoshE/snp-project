@@ -18,6 +18,7 @@ class SnpClientImpl extends SnpClient {
   final SnpClientOptions _options;
 
   Socket? _socket;
+
   @override
   Stream<Uint8List>? socketEventStream;
 
@@ -27,22 +28,28 @@ class SnpClientImpl extends SnpClient {
   SnpClientImpl(this._options);
 
   @override
-  Future initialize() async {
+  Future<DataResponse> initialize() async {
     _logger.info('has started initializing');
+    late SnpResponse response;
     try {
-      /// Make a request to the server to create a socket connection
-      final response = await _sendConnectionRequest();
+      _logger.info('trying to connect to SnpServer at the address ${_options.proxyServerAddress}:${_options.port}');
 
-      /// If connection to server was successful but the response was sent back
-      if (!response.success) {
-        throw response.payload.content['message'];
-      }
-      hasInitialized = true;
-      _logger.info('has successfully connected to proxy server ${_options.proxyServerAddress}:${_options.port}');
+      /// Make a request to the server to create a socket connection
+      response = await _sendConnectionRequest();
     } catch (e) {
-      _logger.info('failed to initialize');
-      rethrow;
+      return DataResponse.failure(
+          'Failed to connect to SnpServer at the address ${_options.proxyServerAddress}:${_options.port}');
     }
+
+    /// If connection to server was successful but the response was sent back
+    if (!response.success) {
+      return DataResponse.failure(response.payload.content['message']);
+    }
+
+    hasInitialized = true;
+    _logger
+        .info('has successfully connected to SnpServer at the address ${_options.proxyServerAddress}:${_options.port}');
+    return DataResponse.success(null);
   }
 
   Future<SnpResponse> _sendConnectionRequest() async {
@@ -61,8 +68,6 @@ class SnpClientImpl extends SnpClient {
       return response;
     } catch (e, st) {
       _socket = null;
-      _logger.severe(e);
-      _logger.severe(st);
       final errorMessage =
           'Could not find the SnpServer at the address ${_options.proxyServerAddress}:${_options.port}';
       _logger.severe(errorMessage);
@@ -110,18 +115,31 @@ class SnpClientImpl extends SnpClient {
     } else if (path == "AUTH" && body == null) {
       return DataResponse.failure('An AUTH command must also have a non-null body');
     }
+
+    SnpRequest snpRequest;
+
+    /// Create the request from params.
     try {
-      final snpRequest = SnpRequest.create(path: path, request: request, body: body);
-      _socket!.write(json.encode(snpRequest.toJson()));
+      snpRequest = SnpRequest.create(path: path, request: request, body: body);
+    } catch (e) {
+      return DataResponse.failure('Unable to create the request');
+    }
+
+    /// Encode the request as json and send to server.
+    _socket!.write(json.encode(snpRequest.toJson()));
+
+    /// Try in case the response handler throws an error.
+    try {
+      /// Wait until we receive a response with the same id as the request we sent
+      /// or we receive an error
       final rawResponse = await socketEventStream!.firstWhere((element) {
         final response = SnpResponseHandler.createResponse(element);
-        return response.id == snpRequest.id;
+
+        return response.id == snpRequest.id || response.status >= 400;
       });
       return DataResponse.success(SnpResponseHandler.createResponse(rawResponse));
-    } catch (e, st) {
-      _logger.severe(e);
-      _logger.severe(st);
-      return DataResponse.failure('Unable to send request to the server. Error $e');
+    } catch (e) {
+      return DataResponse.failure(e.toString());
     }
   }
 }

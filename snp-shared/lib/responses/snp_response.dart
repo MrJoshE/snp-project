@@ -1,7 +1,7 @@
 import '../snp_shared.dart';
 
 class SnpResponse {
-  final String id;
+  final String? id;
 
   final bool success;
 
@@ -9,14 +9,19 @@ class SnpResponse {
 
   final SnpResponsePayload payload;
 
-  const SnpResponse({required this.id, required this.success, required this.status, required this.payload});
+  const SnpResponse({this.id, required this.success, required this.status, required this.payload});
 
   toJson() {
     return {
       "id": id,
       "success": success,
       "status": status,
-      "payload": payload,
+      "payload": payload.content,
     };
+  }
+
+  @override
+  String toString() {
+    return 'SnpResponse - ${toJson()}';
   }
 }

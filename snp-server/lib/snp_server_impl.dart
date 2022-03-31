@@ -7,7 +7,7 @@ import 'package:snp_server/abstract/snp_server.dart';
 import 'package:snp_server/abstract/snp_server_args.dart';
 import 'package:snp_shared/snp_shared.dart';
 
-import 'abstract/snp_connected_socket.dart';
+import 'snp_connected_socket.dart';
 
 class SnpServerImpl extends SnpServer {
   ServerSocket? _serverSocket;

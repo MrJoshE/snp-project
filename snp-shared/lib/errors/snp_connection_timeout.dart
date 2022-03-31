@@ -7,11 +7,7 @@ class SnpConnectionTimeout {
     required this.type,
   });
 
-  factory SnpConnectionTimeout.client() {
-    return SnpConnectionTimeout._(type: SnpConnectionTimeoutType.client);
-  }
+  SnpConnectionTimeout.client() : type = SnpConnectionTimeoutType.client;
 
-  factory SnpConnectionTimeout.server() {
-    return SnpConnectionTimeout._(type: SnpConnectionTimeoutType.server);
-  }
+  SnpConnectionTimeout.server() : type = SnpConnectionTimeoutType.server;
 }

@@ -1,6 +1,10 @@
 import 'dart:io';
 
 abstract class SnpServer {
+  static List<String> validAuthTokens = [
+    'josh',
+  ];
+
   /// Method will be used to start the socket server and start listening for clients.
   Future initialize();
 

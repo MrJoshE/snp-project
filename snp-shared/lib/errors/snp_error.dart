@@ -15,6 +15,7 @@ class SnpError extends SnpResponsePayload {
           "message": message,
         });
 
+  @override
   Map<String, dynamic> toJson() {
     return {
       "error": error,

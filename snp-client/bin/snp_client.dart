@@ -22,11 +22,12 @@ Future main(List<String> arguments) async {
 
   final request = SnpHttpRequest(method: 'GET', path: 'www.google.com');
 
-  await client.initialize();
+  final initializationResponse = await client.initialize();
+  if (!initializationResponse.isSuccessful) return;
 
   final authResponse = await client.authenticate();
-  print('Auth response: ${authResponse.status}');
+  print('Auth response: $authResponse');
 
   final response = await client.send(request: request);
-  print('Response: ${response.status}');
+  print('Response: $response');
 }

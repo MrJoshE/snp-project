@@ -20,7 +20,7 @@ abstract class SnpClient {
   ///   6. Handle on disconnect from server
   ///   7. Handle receiving successful ACK response.
   ///   8. dispose of timer.
-  Future initialize();
+  Future<DataResponse> initialize();
 
   /// Implementation of [send] method is expected to:
   ///   1. Check that there is a valid connection to the [SnpServer] (internally)
