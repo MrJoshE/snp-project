@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:snp_shared/snp_shared.dart';
 
 /// Definition of the [SnpClient] that will be used for sending proxied requests to an [SnpServer]
@@ -41,4 +44,6 @@ abstract class SnpClient {
   /// Boolean getter that represents whether the SnpClient successfully connected to the
   /// proxy server or not.
   bool get hasInitialized;
+
+  Stream<Uint8List>? get socketEventStream;
 }

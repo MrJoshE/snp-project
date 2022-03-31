@@ -18,7 +18,8 @@ class SnpClientImpl extends SnpClient {
   final SnpClientOptions _options;
 
   Socket? _socket;
-  Stream<Uint8List>? _socketStream;
+  @override
+  Stream<Uint8List>? socketEventStream;
 
   @override
   bool hasInitialized = false;
@@ -40,7 +41,7 @@ class SnpClientImpl extends SnpClient {
       _logger.info('has successfully connected to proxy server ${_options.proxyServerAddress}:${_options.port}');
     } catch (e) {
       _logger.info('failed to initialize');
-      if (_options.throwOnError) rethrow;
+      rethrow;
     }
   }
 
@@ -53,8 +54,8 @@ class SnpClientImpl extends SnpClient {
       if (_socket == null) {
         throw '404 Server not found.';
       }
-      _socketStream = _socket!.asBroadcastStream();
-      final rawResponse = await _socketStream!.elementAt(0);
+      socketEventStream = _socket!.asBroadcastStream();
+      final rawResponse = await socketEventStream!.elementAt(0);
 
       final response = SnpResponseHandler.createResponse(rawResponse);
       return response;
@@ -62,8 +63,10 @@ class SnpClientImpl extends SnpClient {
       _socket = null;
       _logger.severe(e);
       _logger.severe(st);
-      _logger.severe('Could not find the SnpServer at the address ${_options.proxyServerAddress}:${_options.port}');
-      rethrow;
+      final errorMessage =
+          'Could not find the SnpServer at the address ${_options.proxyServerAddress}:${_options.port}';
+      _logger.severe(errorMessage);
+      throw errorMessage;
     }
   }
 
@@ -71,7 +74,7 @@ class SnpClientImpl extends SnpClient {
   Future<SnpResponse> authenticate() async {
     if (_options.token == null) {
       _logger.info('Cannot authenticate with a null token');
-      if (_options.throwOnError) throw 'Cannot authenticate with a null token';
+      throw 'Cannot authenticate with a null token';
     }
 
     final response = await _sendToServer(path: 'AUTH', body: {"token": _options.token});
@@ -110,7 +113,7 @@ class SnpClientImpl extends SnpClient {
     try {
       final snpRequest = SnpRequest.create(path: path, request: request, body: body);
       _socket!.write(json.encode(snpRequest.toJson()));
-      final rawResponse = await _socketStream!.firstWhere((element) {
+      final rawResponse = await socketEventStream!.firstWhere((element) {
         final response = SnpResponseHandler.createResponse(element);
         return response.id == snpRequest.id;
       });

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:snp_shared/responses/responses.dart';
+import 'package:snp_view/injection.dart';
 
 import 'view/home_page.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await setupInjection();
+
+  SnpResponseHandler.isLogging = false;
   runApp(const App());
 }
 
@@ -12,6 +17,9 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: HomePage());
+    return const MaterialApp(
+      home: HomePage(),
+      debugShowCheckedModeBanner: false,
+    );
   }
 }

@@ -50,6 +50,8 @@ class SnpServerImpl extends SnpServer {
   void onConnect(Socket socket) {
     _connectedSockets[socket.address] = SnpConnectedSocket(socket: socket);
 
+    print(_connectedSockets);
+
     socket.write(json.encode(SnpResponse(
       id: 'ack',
       success: true,
