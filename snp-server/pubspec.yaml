@@ -7,13 +7,13 @@ publish_to: none
 environment:
   sdk: ">=2.16.1"
 
-
 dependencies:
+  dio:
   http: ^0.13.4
   logging:
   uuid: ^3.0.6
   snp_shared:
-    path: '../snp-shared'
+    path: "../snp-shared"
 #   path: ^1.8.0
 
 dev_dependencies:

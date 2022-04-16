@@ -39,4 +39,13 @@ class SnpService {
       return DataResponse.failure(e.toString());
     }
   }
+
+  Future<DataResponse<SnpResponse>> send(SnpHttpRequest request) async {
+    try {
+      final response = await _client.client.send(request: request);
+      return DataResponse.success(response);
+    } catch (e) {
+      return DataResponse.failure(e.toString());
+    }
+  }
 }

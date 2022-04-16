@@ -1,4 +1,5 @@
 import 'package:logging/logging.dart';
+import 'package:snp_server/snp_server_config_impl.dart';
 import 'package:snp_server/snp_server_impl.dart';
 
 Future<void> main() async {
@@ -13,7 +14,9 @@ Future<void> main() async {
     lastLoggerName = record.loggerName;
   });
 
-  final server = SnpServerImpl();
+  final config = SnpServerConfigImpl();
+
+  final server = SnpServerImpl(config);
 
   await server.initialize();
 }

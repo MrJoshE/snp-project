@@ -20,13 +20,13 @@ Future main(List<String> arguments) async {
 
   final client = SnpClientImpl(options);
 
-  final request = SnpHttpRequest(method: 'GET', path: 'www.google.com');
+  final request = SnpHttpRequest(method: 'GET', path: 'https://www.google.com');
 
   final initializationResponse = await client.initialize();
   if (!initializationResponse.isSuccessful) return;
 
-  final authResponse = await client.authenticate();
-  print('Auth response: $authResponse');
+  // final authResponse = await client.authenticate();
+  // print('Auth response: $authResponse');
 
   final response = await client.send(request: request);
   print('Response: $response');

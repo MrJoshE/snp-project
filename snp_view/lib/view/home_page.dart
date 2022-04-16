@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snp_view/view/app_blocking_loading_view.dart';
+import 'package:snp_view/view/request_component.dart';
 
 import '../injection.dart';
 import '../state/home_page_cubit.dart';
@@ -87,7 +88,9 @@ class HomePageView extends StatelessWidget {
                             context.read<HomePageCubit>().authenticate();
                           }
                         : null,
-                  )
+                  ),
+                  const SizedBox(height: 10),
+                  const RequestComponent(),
                 ],
               ),
             ),

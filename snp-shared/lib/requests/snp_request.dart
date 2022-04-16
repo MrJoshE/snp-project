@@ -13,6 +13,7 @@ class SnpRequest {
   /// A body for the request
   ///
   /// For example: when the authenticate path is given the server will check the 'authToken' key for the authentication token.
+  /// When the send path is given the server will check the body for the http request that the client wants to send.
   final Map<String, dynamic>? body;
 
   /// Request that the client wants the user to make.
@@ -61,5 +62,10 @@ class SnpRequest {
       request: json['path'] == 'SEND' ? SnpHttpRequest.fromJson(json['body']) : null,
       timeout: json['timeout'],
     );
+  }
+
+  @override
+  String toString() {
+    return 'SnpRequest{id: $id, path: $path, body: $body, request: $request, timeout: $timeout}';
   }
 }

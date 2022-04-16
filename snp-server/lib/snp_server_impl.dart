@@ -5,18 +5,22 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:snp_server/abstract/snp_server.dart';
 import 'package:snp_server/abstract/snp_server_args.dart';
+import 'package:snp_server/abstract/snp_server_config.dart';
 import 'package:snp_shared/snp_shared.dart';
 
+import 'abstract/socket_information.dart';
 import 'snp_connected_socket.dart';
 
 class SnpServerImpl extends SnpServer {
   ServerSocket? _serverSocket;
   late final StreamSubscription _streamSubscription;
 
-  static final Logger _logger = Logger('SnpServerImpl');
+  static final Logger _logger = SnpServer.logger;
 
   /// Map from IP address to ConnectedClient, keeping this for stateful sockets.
   final Map<InternetAddress, SnpConnectedSocket> _connectedSockets = {};
+
+  final Map<InternetAddress, SocketInformation> _socketInformation = {};
 
   /// When requests come in we will put them in the buffer so that if we want to add a processing
   /// timeout to stop the server from being overwhelmed we can do so.
@@ -24,7 +28,11 @@ class SnpServerImpl extends SnpServer {
 
   // final List<dynamic> _responseBuffer = [];
 
+  final SnpServerConfig _config;
+
   bool _isDisposed = false;
+
+  SnpServerImpl(this._config);
 
   @override
   Future initialize({SnpServerArgs? args}) async {
@@ -43,12 +51,16 @@ class SnpServerImpl extends SnpServer {
 
   @override
   void onClose() {
-    // TODO: implement onClose
+    _logger.info('has closed.');
   }
 
   @override
   void onConnect(Socket socket) {
-    _connectedSockets[socket.address] = SnpConnectedSocket(socket: socket);
+    if (!_socketInformation.containsKey(socket.address)) {
+      _socketInformation[socket.address] = SocketInformation(_config);
+    }
+    _connectedSockets[socket.address] =
+        SnpConnectedSocket(socket: socket, socketInformation: _socketInformation[socket.address]!);
 
     print(_connectedSockets);
 
@@ -62,7 +74,7 @@ class SnpServerImpl extends SnpServer {
 
   @override
   void onError() {
-    // TODO: implement onError
+    _logger.info('has received an error please check the logs.');
   }
 
   @override

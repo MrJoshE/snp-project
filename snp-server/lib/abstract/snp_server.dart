@@ -1,9 +1,15 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:logging/logging.dart';
+import 'package:snp_shared/snp_shared.dart';
 
 abstract class SnpServer {
+  static final httpClient = Dio();
   static List<String> validAuthTokens = [
     'josh',
   ];
+
+  static final Logger logger = Logger('SnpServer');
 
   /// Method will be used to start the socket server and start listening for clients.
   Future initialize();
@@ -19,4 +25,20 @@ abstract class SnpServer {
 
   /// Method will handling disposing of the sever.
   void dispose();
+
+  /// Return the response
+  static Future<DataResponse<Response>> makeHttpRequest(SnpHttpRequest request) async {
+    try {
+      if (request.method == 'GET') {
+        return DataResponse.success(await httpClient.get(request.path, queryParameters: request.body));
+      } else if (request.method == 'POST') {
+        return DataResponse.success(await httpClient.post(request.path, data: request.body));
+      } else {
+        return DataResponse.failure('Invalid method: ${request.method}');
+      }
+    } catch (e) {
+      logger.warning('Failed to make a request to path: ${request.path}. Error: $e');
+      return DataResponse.failure(e.toString());
+    }
+  }
 }

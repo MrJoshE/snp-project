@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:logging/logging.dart';
 import 'package:snp_client/abstract/snp_client.dart';
 import 'package:snp_client/abstract/snp_client_options.dart';
-import 'package:snp_shared/requests/snp_http_request.dart';
 import 'package:snp_shared/snp_shared.dart';
 
 class SnpClientImpl extends SnpClient {
@@ -66,7 +65,7 @@ class SnpClientImpl extends SnpClient {
 
       final response = SnpResponseHandler.createResponse(rawResponse);
       return response;
-    } catch (e, st) {
+    } catch (e) {
       _socket = null;
       final errorMessage =
           'Could not find the SnpServer at the address ${_options.proxyServerAddress}:${_options.port}';
@@ -83,7 +82,7 @@ class SnpClientImpl extends SnpClient {
     }
 
     final response = await _sendToServer(path: 'AUTH', body: {"token": _options.token});
-
+    _logger.info('received auth response $response');
     if (!response.isSuccessful) {
       _logger.info(response.failure);
       throw response.failure!;
@@ -134,10 +133,11 @@ class SnpClientImpl extends SnpClient {
       /// or we receive an error
       final rawResponse = await socketEventStream!.firstWhere((element) {
         final response = SnpResponseHandler.createResponse(element);
-
         return response.id == snpRequest.id || response.status >= 400;
       });
-      return DataResponse.success(SnpResponseHandler.createResponse(rawResponse));
+
+      final response = SnpResponseHandler.createResponse(rawResponse);
+      return DataResponse.success(response);
     } catch (e) {
       return DataResponse.failure(e.toString());
     }

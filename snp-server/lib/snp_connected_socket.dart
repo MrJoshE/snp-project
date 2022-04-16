@@ -7,17 +7,31 @@ import 'package:snp_shared/snp_shared.dart';
 import 'package:uuid/uuid.dart';
 
 import 'abstract/snp_server.dart';
+import 'abstract/socket_information.dart';
 
 const Uuid uuid = Uuid();
 
 class SnpConnectedSocket {
+  /// Logger that allows the server to output events of the connected socket for logging purposes.
   static final _logger = Logger('SnpConnectedSocket $_uuid');
+
+  /// UUID of the socket to make sure that the ids for the sockets are unique.
   static final _uuid = uuid.v1();
+
+  /// The socket that is used to communicate between client and server.
   final Socket socket;
+
+  /// Possible information that is made about the client that is injected
+  /// by the server is any data is available.
+  final SocketInformation socketInformation;
+
+  /// Variable to keep track of whether the socket connection has been authenticated
+  /// or not.
   bool isAuthenticated = false;
 
   SnpConnectedSocket({
     required this.socket,
+    required this.socketInformation,
   }) {
     _logger.info('Client connected ');
     // Listen for incoming data.
@@ -32,8 +46,16 @@ class SnpConnectedSocket {
     );
   }
 
-  void onRequest(Uint8List data) {
+  /// Handles the socket receiving data from the client in Uint8List form.
+  /// This function will create the request creation and pass the formed request
+  /// to the appropriate handler.
+  ///
+  /// We are also catching an error if one is thrown due to bad data being received.
+  ///
+  /// [data] is the data that is received from the client.
+  Future<void> onRequest(Uint8List data) async {
     late SnpRequest request;
+
     try {
       request = SnpRequestHandler.createRequest(data);
     } catch (e) {
@@ -45,7 +67,7 @@ class SnpConnectedSocket {
     if (request.path == 'AUTH') {
       return _handleAuthRequest(request);
     } else if (request.path == "SEND") {
-      return _handleSendRequest(request);
+      return await _handleSendRequest(request);
     }
   }
 
@@ -60,33 +82,83 @@ class SnpConnectedSocket {
 
     if (!authorized) {
       isAuthenticated = false;
+      _logger.info('writing a failed AUTH response back to the client');
       return _writeResponseToSocket(
           SnpResponse(id: request.id, success: false, status: 401, payload: SnpUnauthorizedError.token()));
     }
 
     isAuthenticated = true;
+    _logger.info('writing a successful AUTH response back to the client');
     return _writeResponseToSocket(SnpResponse(
-        success: true, status: 201, payload: SnpResponsePayload(content: {'message': 'Authentication successful'})));
+        id: request.id,
+        success: true,
+        status: 201,
+        payload: SnpResponsePayload(content: {'message': 'Authentication successful'})));
   }
 
-  void _handleSendRequest(SnpRequest request) {
+  Future<void> _handleSendRequest(SnpRequest request) async {
     _logger.info('has made a SEND request');
-    return _writeResponseToSocket(SnpUnknownError(request.id, 'Not implemented yet'));
+
+    try {
+      /// Check that the user has remaining allowed send requests.
+      if (!isAuthenticated && !socketInformation.hasRemainingSendRequests) {
+        /// Tell the client that they have no requests left.
+        return _writeResponseToSocket(
+            SnpResponse(id: request.id, success: false, status: 403, payload: SnpUnauthorizedError.request()));
+      }
+
+      /// Check what the request looks like
+      _logger.info(request.request!);
+
+      if (request.request == null) {
+        return _writeResponseToSocket(SnpUnknownRequestError(id: request.id, failure: 'Request is null'));
+      }
+
+      /// make http request with request (we know that its not null)
+      final response = await SnpServer.makeHttpRequest(request.request!);
+      if (!response.isSuccessful) {
+        return _writeResponseToSocket(SnpUnknownRequestError(id: request.id, failure: response.failure!));
+      }
+
+      /// Now the user has made the request we need to add to their total requests.
+      socketInformation.incrementRequests();
+
+      _logger.info('Response received from server: ${response.content}');
+
+      final snpResponse = SnpResponse(
+        id: request.id,
+        success: true,
+        status: 200,
+        payload: SnpSuccessPayload(
+          requests: socketInformation.remainingRequests,
+          response: response.content!.data,
+        ),
+      );
+      _logger.info('cast response');
+      return _writeResponseToSocket(snpResponse);
+    } catch (e, st) {
+      _logger.severe(e, e, st);
+      return _writeResponseToSocket(
+          SnpUnknownError(request.id, 'An unknown error occurred while handling the request'));
+    }
   }
 
   /// If there was an error when handling the incoming request.
   void _handleRequestCastingFailure(Uint8List data) {
+    final requestJson = json.decode(utf8.decode(data));
+
     /// First lets make sure that the request was valid.
-    final validationResponse = SnpRequestHandler.validateResponse(json.decode(utf8.decode(data)));
+    final validationResponse = SnpRequestHandler.validateResponse(requestJson);
 
     /// If the request validation failed then ...
     if (!validationResponse.success) {
       /// We have access to the property, stage and error message.
-      _writeResponseToSocket(SnpUnknownRequestError(validationResponse.error!));
+      _writeResponseToSocket(SnpUnknownRequestError(failure: validationResponse.error!));
       return;
     }
-    final requestJson = json.decode(utf8.decode(data));
-    _writeResponseToSocket(SnpUnknownError(requestJson['id'], ''));
+
+    _logger.severe('_handleRequestCastingFailure: cannot cast error');
+    _writeResponseToSocket(SnpUnknownError(requestJson['id'], 'Internal server casting error. See logs'));
     return;
   }
 

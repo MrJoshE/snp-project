@@ -4,6 +4,7 @@ import 'package:snp_view/model/api_client.dart';
 import 'package:snp_view/model/snp_service.dart';
 
 import 'state/home_page_cubit.dart';
+import 'state/request_componet_cubit.dart';
 
 GetIt locator = GetIt.instance;
 
@@ -13,6 +14,7 @@ Future setupInjection() async {
   locator.registerLazySingleton(() => SnpService(locator()));
 
   locator.registerFactory<HomePageCubit>(() => HomePageCubit(locator()));
+  locator.registerFactory(() => RequestComponentCubit(locator()));
 
   // locator.registerLazySingleton(instance)
 }
