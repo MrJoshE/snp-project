@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors_in_immutables
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -10,7 +12,7 @@ class ResponseViewerPage extends StatelessWidget {
     required this.data,
   }) : super(key: key);
 
-  late WebViewController _webViewController;
+  late final WebViewController _webViewController;
 
   @override
   Widget build(BuildContext context) {
