@@ -81,7 +81,7 @@ class SnpClientImpl extends SnpClient {
       throw 'Cannot authenticate with a null token';
     }
 
-    final response = await _sendToServer(path: 'AUTH', body: {"token": _options.token});
+    final response = await _sendToServer(type: 'AUTH', body: {"token": _options.token});
     _logger.info('received auth response $response');
     if (!response.isSuccessful) {
       _logger.info(response.failure);
@@ -92,7 +92,7 @@ class SnpClientImpl extends SnpClient {
 
   @override
   Future<SnpResponse> send({required SnpHttpRequest request}) async {
-    final response = await _sendToServer(path: 'SEND', request: request);
+    final response = await _sendToServer(type: 'SEND', request: request);
     if (!response.isSuccessful) {
       _logger.info(response.failure);
       throw response.failure!;
@@ -102,16 +102,16 @@ class SnpClientImpl extends SnpClient {
   }
 
   Future<DataResponse<SnpResponse>> _sendToServer({
-    required String path,
+    required String type,
     Map<String, dynamic>? body,
     SnpHttpRequest? request,
   }) async {
     if (!hasInitialized) {
       return DataResponse.failure('cannot send request until initialized');
     }
-    if (path == "SEND" && request == null) {
+    if (type == "SEND" && request == null) {
       return DataResponse.failure('A SEND command must also have a non-null request');
-    } else if (path == "AUTH" && body == null) {
+    } else if (type == "AUTH" && body == null) {
       return DataResponse.failure('An AUTH command must also have a non-null body');
     }
 
@@ -119,7 +119,7 @@ class SnpClientImpl extends SnpClient {
 
     /// Create the request from params.
     try {
-      snpRequest = SnpRequest.create(path: path, request: request, body: body);
+      snpRequest = SnpRequest.create(type: type, request: request, body: body);
     } catch (e) {
       return DataResponse.failure('Unable to create the request');
     }

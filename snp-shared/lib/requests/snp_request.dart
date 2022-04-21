@@ -8,12 +8,12 @@ class SnpRequest {
   final String id;
 
   /// Send or authenticate (depending on what the operation is)
-  final String path;
+  final String type;
 
   /// A body for the request
   ///
-  /// For example: when the authenticate path is given the server will check the 'authToken' key for the authentication token.
-  /// When the send path is given the server will check the body for the http request that the client wants to send.
+  /// For example: when the authenticate command is given the server will check the 'authToken' key for the authentication token.
+  /// When the send command is given the server will check the body for the http request that the client wants to send.
   final Map<String, dynamic>? body;
 
   /// Request that the client wants the user to make.
@@ -25,21 +25,21 @@ class SnpRequest {
 
   const SnpRequest({
     required this.id,
-    required this.path,
+    required this.type,
     this.request,
     this.body = const {},
     this.timeout,
   });
 
   factory SnpRequest.create({
-    required String path,
+    required String type,
     SnpHttpRequest? request,
     Map<String, dynamic>? body,
     int? timeout,
   }) =>
       SnpRequest(
         id: uuid.v1(),
-        path: path,
+        type: type,
         request: request,
         body: body,
         timeout: timeout,
@@ -48,7 +48,7 @@ class SnpRequest {
   Map<String, dynamic> toJson() {
     return {
       "id": id,
-      "path": path,
+      "type": type,
       "body": body ?? request?.toJson(),
       "timeout": timeout,
     };
@@ -57,15 +57,15 @@ class SnpRequest {
   factory SnpRequest.fromJson(Map<String, dynamic> json) {
     return SnpRequest(
       id: json['id'],
-      path: json['path'],
+      type: json['type'],
       body: json['body'],
-      request: json['path'] == 'SEND' ? SnpHttpRequest.fromJson(json['body']) : null,
+      request: json['type'] == 'SEND' ? SnpHttpRequest.fromJson(json['body']) : null,
       timeout: json['timeout'],
     );
   }
 
   @override
   String toString() {
-    return 'SnpRequest{id: $id, path: $path, body: $body, request: $request, timeout: $timeout}';
+    return 'SnpRequest{id: $id, type: $type, body: $body, request: $request, timeout: $timeout}';
   }
 }

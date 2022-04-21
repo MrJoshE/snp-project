@@ -64,9 +64,9 @@ class SnpConnectedSocket {
     }
 
     /// Now we have the request object we can handle the request as needed.
-    if (request.path == 'AUTH') {
+    if (request.type == 'AUTH') {
       return _handleAuthRequest(request);
-    } else if (request.path == "SEND") {
+    } else if (request.type == "SEND") {
       return await _handleSendRequest(request);
     }
   }
@@ -92,7 +92,7 @@ class SnpConnectedSocket {
     return _writeResponseToSocket(SnpResponse(
         id: request.id,
         success: true,
-        status: 201,
+        status: 200,
         payload: SnpResponsePayload(content: {'message': 'Authentication successful'})));
   }
 

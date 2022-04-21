@@ -11,7 +11,7 @@ class SnpRequestHandler {
     print(context);
   }
 
-  static List<String> allowedPaths = [
+  static List<String> allowedTypes = [
     'AUTH',
     'SEND',
   ];
@@ -44,10 +44,8 @@ class SnpRequestHandler {
     // First a null check on the status of the success and status properties.
     if (json['id'] == null) {
       return SnpHandlerValidationResponse.failure('id', stage);
-    } else if (json['path'] == null) {
-      return SnpHandlerValidationResponse.failure('path', stage);
-    } else if (json['path'] == null) {
-      return SnpHandlerValidationResponse.failure('path', stage);
+    } else if (json['type'] == null) {
+      return SnpHandlerValidationResponse.failure('type', stage);
     }
 
     // Check that the values are valid
@@ -55,14 +53,14 @@ class SnpRequestHandler {
 
     // Check that the properties are the correct type
     if (json['id'] is! String) {
-      return SnpHandlerValidationResponse.failure('success', stage);
-    } else if (json['path'] is! String) {
-      return SnpHandlerValidationResponse.failure('status', stage);
+      return SnpHandlerValidationResponse.failure('id', stage);
+    } else if (json['type'] is! String) {
+      return SnpHandlerValidationResponse.failure('type', stage);
     }
 
-    stage = 'Allowed Path';
-    if (!allowedPaths.contains(json['path'])) {
-      return SnpHandlerValidationResponse.failure('path', stage);
+    stage = 'Allowed type';
+    if (!allowedTypes.contains(json['type'])) {
+      return SnpHandlerValidationResponse.failure('type', stage);
     }
 
     return SnpHandlerValidationResponse.success();

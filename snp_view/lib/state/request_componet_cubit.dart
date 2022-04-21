@@ -1,7 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:snp_shared/snp_shared.dart';
 
-import '../model/api_client.dart';
 import '../model/snp_service.dart';
 
 class RequestComponentState {

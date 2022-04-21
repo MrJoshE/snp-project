@@ -13,13 +13,26 @@ class SnpResponseHandler {
   }
 
   static const List<int> _allowedStatusCodes = [
+    /// Status code for everything is ok
     200,
+
+    /// ACK response code for UDP
     201,
+
+    /// Bad request code - the request was not understood by the server
     400,
+
+    /// Unauthorized request code - the token was invalid
     401,
+
+    /// Forbidden request code - not enough requests left to be made
     403,
+
+    /// Internal server error code
     405,
-    406,
+
+    /// Request timout status code - server didn't get a response when making the request in time.
+    408,
   ];
 
   static SnpResponse createResponse(Uint8List rawResponse) {
