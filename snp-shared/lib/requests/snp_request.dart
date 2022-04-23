@@ -1,9 +1,10 @@
+import 'package:equatable/equatable.dart';
 import 'package:snp_shared/requests/snp_http_request.dart';
 import 'package:uuid/uuid.dart';
 
 const uuid = Uuid();
 
-class SnpRequest {
+class SnpRequest extends Equatable {
   /// Id for the request so that the client can identify when they get the response.
   final String id;
 
@@ -68,4 +69,7 @@ class SnpRequest {
   String toString() {
     return 'SnpRequest{id: $id, type: $type, body: $body, request: $request, timeout: $timeout}';
   }
+
+  @override
+  List<Object?> get props => [id, type, body, request, timeout];
 }

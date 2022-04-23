@@ -4,5 +4,5 @@ class SnpServerConfigImpl extends SnpServerConfig {
   const SnpServerConfigImpl();
 
   @override
-  int get maxSendRequestsPerSocket => 10;
+  int get maxSendRequestsPerSocket => 2;
 }

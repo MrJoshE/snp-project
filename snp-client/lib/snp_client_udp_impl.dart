@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:logging/logging.dart';
 import 'package:snp_client/abstract/snp_client.dart';
 import 'package:snp_client/abstract/snp_client_options.dart';
+import 'package:snp_shared/handlers/snp_packet_handler.dart';
 import 'package:snp_shared/snp_shared.dart';
 
 /// UDP implementation of the socket client.
@@ -20,6 +21,8 @@ class SnpClientUdpImpl extends SnpClient {
   late final StreamSubscription<RawSocketEvent> _socketSubscription;
   final StreamController<SnpResponse> _responseController = StreamController.broadcast();
   late StreamSubscription<SnpResponse> _responseSubscription;
+
+  late final _packetBuffer = PacketBuffer(((packets, datagram) => onLastPacketReceivedCallback(packets, datagram)));
 
   /// Initializes the client.
   /// This method must be called before any other method.
@@ -39,7 +42,7 @@ class SnpClientUdpImpl extends SnpClient {
     try {
       InternetAddress host = InternetAddress(_options.proxyServerAddress!);
       _socket = await RawDatagramSocket.bind(host, 5000);
-      _socketSubscription = _socket.listen(_onReceivedMessage);
+      _socketSubscription = _socket.listen(_handleIncomingPacket);
       _hasInitialized = true;
       return DataResponse.success('Successfully initialized');
     } catch (e) {
@@ -49,11 +52,22 @@ class SnpClientUdpImpl extends SnpClient {
   }
 
   @override
-  Future<SnpResponse> authenticate() {
+  Future<SnpResponse> authenticate() async {
     if (!hasInitialized) {
       throw 'Client hasn\'t been initialized yet';
     }
-    throw UnimplementedError();
+    if (_options.token == null) {
+      _logger.info('Cannot authenticate with a null token');
+      throw 'Cannot authenticate with a null token';
+    }
+
+    final response = await _sendToServer(type: 'AUTH', body: {"token": _options.token});
+    _logger.info('received auth response $response');
+    if (!response.isSuccessful) {
+      _logger.info(response.failure);
+      throw response.failure!;
+    }
+    return response.content!;
   }
 
   @override
@@ -101,7 +115,7 @@ class SnpClientUdpImpl extends SnpClient {
     }
 
     /// Encode the request as json and send to server.
-    _writeToSocket(snpRequest.toJson());
+    _writeToSocket(snpRequest);
 
     /// Try in case the response handler throws an error.
     try {
@@ -148,38 +162,61 @@ class SnpClientUdpImpl extends SnpClient {
     }
   }
 
-  _onReceivedMessage(RawSocketEvent message) {
-    if (message == RawSocketEvent.read) {
-      final datagram = _socket.receive();
+  _handleIncomingPacket(RawSocketEvent event) {
+    if (event != RawSocketEvent.read) return;
 
-      if (datagram == null) {
-        _logger.info('Received null data');
-        return;
-      }
+    Datagram? datagram = _socket.receive();
+    if (datagram == null) return;
+    _logger.info('Client has received the following raw data. Converting to a packet now...');
 
-      try {
-        final response = SnpResponseHandler.createResponse(datagram.data);
-        _logger.info('Successfully received response from server $response');
-        _responseController.add(response);
-      } catch (e) {
-        _logger.severe('Unable to create response from data: ${String.fromCharCodes(datagram.data)}. Error: $e');
-      }
+    try {
+      final packetBytes = datagram.data;
+      final packet = SnpPacketHandler.getPacketFromBytes(packetBytes);
+      _logger.info('Client has received the following packet: $packet');
+      _packetBuffer.handlePacket(packet, datagram);
+    } catch (e) {
+      /// Could not convert the datagram to a list of packets
+      ///
+      _logger.severe(e);
     }
   }
 
-  void _writeToSocket(Map<String, dynamic> payload) {
+  Future<void> onLastPacketReceivedCallback(List<SnpPacket>? packets, Datagram datagram) async {
+    if (packets == null) {
+      _logger.severe('Receiving packets timed out.');
+      // final timeoutErrorResponse = SnpTimeoutError('Receiving packets timed out.');
+      return;
+    }
+
+    /// Get the request payload bytes from the finalized list of packets.
+    final responseBytes = SnpPacketHandler.getPayloadBytesFromPacketList(packets);
+
+    /// Send the full list of request bytes the next function.
+    _onReceivedMessage(responseBytes);
+  }
+
+  _onReceivedMessage(List<int> responseBytes) {
+    try {
+      final response = SnpResponseHandler.createResponse(Uint8List.fromList(responseBytes));
+      _logger.info('Successfully received response from server $response');
+      _responseController.add(response);
+    } catch (e) {
+      final message = utf8.decode(responseBytes);
+      _logger.severe('Unable to create response from data: $message. Error: $e');
+    }
+  }
+
+  void _writeToSocket(SnpRequest request) {
     /// To write to the socket we need to know that the socket has binded to the address.
     /// And that the proxyServerAddress is not null.
     if (!_hasInitialized) return;
 
-    _logger.info('The following payload is being sent to the server: $payload');
+    _logger.info('The following payload is being sent to the server: ${request.toJson()}');
 
-    // Encode the payload to write to the socket to List<int> then we send it over the socket.
-    _socket.send(
-      Uint8List.fromList(utf8.encode(json.encode(payload))),
-      InternetAddress(_options.proxyServerAddress!),
-      _options.port,
-    );
+    final packets = SnpPacketHandler.convertRequestToPackets(request);
+    for (final packet in packets) {
+      _socket.send(packet.packetData, InternetAddress(_options.proxyServerAddress!), _options.port);
+    }
   }
 
   void dispose() {

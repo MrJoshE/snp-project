@@ -6,3 +6,4 @@ export 'snp_unknown_error.dart';
 export 'snp_unknown_request_error.dart';
 export 'snp_bad_request_error.dart';
 export 'snp_internal_error.dart';
+export 'snp_timeout_error.dart';

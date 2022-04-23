@@ -7,9 +7,9 @@ publish_to: none
 environment:
   sdk: ">=2.16.1"
 
-
 dependencies:
   http: ^0.13.4
+  equatable:
   uuid:
 #   path: ^1.8.0
 

@@ -6,11 +6,12 @@ class SnpSuccessPayload extends SnpResponsePayload {
   final String response;
 
   /// The number of requests that the user has left.
-  final int requests;
+  /// This will be null if the user has authenticated.
+  final int? requests;
 
   SnpSuccessPayload({
     required this.response,
-    required this.requests,
+    this.requests,
   }) : super(content: {
           "response": response,
           "requests": requests,
@@ -19,4 +20,7 @@ class SnpSuccessPayload extends SnpResponsePayload {
   static Future<SnpSuccessPayload> fromJson(Map<String, dynamic> json) async {
     return SnpSuccessPayload(response: json['response'], requests: json['requests']);
   }
+
+  @override
+  List<Object?> get props => [response, requests];
 }
