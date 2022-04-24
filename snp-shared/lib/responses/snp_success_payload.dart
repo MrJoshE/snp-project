@@ -3,7 +3,7 @@ import 'package:snp_shared/responses/responses.dart';
 class SnpSuccessPayload extends SnpResponsePayload {
   /// The http response that was received by the server after making the request
   /// on the users behalf.
-  final String response;
+  final Map<String, dynamic> response;
 
   /// The number of requests that the user has left.
   /// This will be null if the user has authenticated.

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:snp_shared/snp_shared.dart';
 import 'package:snp_view/abstract/snp_server_status.dart';
 import 'package:snp_view/model/api_client.dart';
@@ -43,6 +44,7 @@ class SnpService {
   Future<DataResponse<SnpResponse>> send(SnpHttpRequest request) async {
     try {
       final response = await _client.client.send(request: request);
+      Logger('TESTING').info('response: $response');
       return DataResponse.success(response);
     } catch (e) {
       return DataResponse.failure(e.toString());

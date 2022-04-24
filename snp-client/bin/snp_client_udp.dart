@@ -6,7 +6,8 @@ import 'package:snp_shared/snp_shared.dart';
 Future<void> main() async {
   registerLogger();
 
-  final options = SnpClientOptions(proxyServerAddress: '127.0.0.1', token: 'josh');
+  final options = SnpClientOptions(proxyServerAddress: '192.168.0.192', token: 'josh', port: 7788);
+  // final options = SnpClientOptions(proxyServerAddress: '127.0.0.1', token: 'josh', port: 1502);
   final client = SnpClientUdpImpl(options);
 
   final dataResponse = await client.initialize();
@@ -17,8 +18,8 @@ Future<void> main() async {
     return;
   }
 
-  final authResponse = await client.authenticate();
-  print(authResponse);
+  // final authResponse = await client.authenticate();
+  // print(authResponse);
 
   final request = SnpHttpRequest(method: 'GET', path: 'https://www.google.com');
   final response = await client.send(request: request);

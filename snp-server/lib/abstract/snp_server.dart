@@ -28,10 +28,12 @@ abstract class SnpServer {
 
   /// Return the response
   static Future<DataResponse<Response>> makeHttpRequest(SnpHttpRequest request) async {
+    final method = request.method.toUpperCase();
+
     try {
-      if (request.method == 'GET') {
-        return DataResponse.success(await httpClient.get(request.path, queryParameters: request.body));
-      } else if (request.method == 'POST') {
+      if (method == 'GET') {
+        return DataResponse.success(await httpClient.get(request.path, queryParameters: request.queryParameters));
+      } else if (method == 'POST') {
         return DataResponse.success(await httpClient.post(request.path, data: request.body));
       } else {
         return DataResponse.failure('Invalid method: ${request.method}');

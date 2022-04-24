@@ -7,7 +7,7 @@ class SnpAckResponse extends SnpResponse with EquatableMixin {
 
   /// [id] is the id of the request.
   /// [queue] is the position the request is in the queue.
-  SnpAckResponse(String? id, int queue)
+  SnpAckResponse(String id, int queue)
       : super(
           id: id,
           status: 201,

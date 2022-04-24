@@ -5,7 +5,6 @@ import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
 import 'package:snp_server/abstract/snp_server_config.dart';
-import 'package:snp_shared/handlers/snp_packet_handler.dart';
 import 'package:snp_shared/snp_shared.dart';
 
 import 'abstract/snp_server.dart';
@@ -62,8 +61,7 @@ class SnpServerUdpImpl {
   Future initialize({SnpServerArgs? args}) async {
     _logger.info('is initializing');
     try {
-      _serverSocket =
-          await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, args?.port ?? SnpDefaultConfig.defaultPort);
+      _serverSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, args?.port ?? SnpDefaultConfig.defaultPort);
       _logger.shout('Listening on ${InternetAddress.loopbackIPv4.address}:${_serverSocket.port}');
 
       hasInitialized = true;
@@ -81,24 +79,25 @@ class SnpServerUdpImpl {
 
     Datagram? datagram = _serverSocket.receive();
     if (datagram == null) return;
-    _logger.info('Server has received the following raw data. Converting to a packet now...');
+    _logger.info(
+        'Server has received the following raw data: ${String.fromCharCodes(datagram.data)}. Converting to a packet now...');
 
     try {
       final packetBytes = datagram.data;
       final packet = SnpPacketHandler.getPacketFromBytes(packetBytes);
       _logger.info('Server has received the following packet: $packet');
       _packetBuffer.handlePacket(packet, datagram);
-    } catch (e) {
+    } catch (e, st) {
       /// Could not convert the datagram to a list of packets
       ///
-      _logger.severe(e);
+      _logger.severe('$e $st');
     }
   }
 
   Future<void> onLastPacketReceivedCallback(List<SnpPacket>? packets, Datagram datagram) async {
     if (packets == null) {
       _logger.severe('Receiving packets timed out.');
-      final timeoutErrorResponse = SnpTimeoutError('Receiving packets timed out.');
+      final timeoutErrorResponse = SnpTimeoutError('TIMED_OUT_NO_ID', 'Receiving packets timed out.');
       _sendToClient(response: timeoutErrorResponse, datagram: datagram);
       return;
     }
@@ -224,7 +223,8 @@ class SnpServerUdpImpl {
       /// If we the client cannot make the request then they will be sent an unauthorized response.
       if (!canMakeRequest) {
         _logger.info('Client is not authenticated or has reached the maximum number of requests they can make');
-        final unauthorizedResponse = SnpResponse(success: false, status: 403, payload: SnpUnauthorizedError.request());
+        final unauthorizedResponse =
+            SnpResponse(id: request.id, success: false, status: 403, payload: SnpUnauthorizedError.request());
         _sendToClient(response: unauthorizedResponse, datagram: datagram);
         return;
       }
@@ -239,7 +239,7 @@ class SnpServerUdpImpl {
       /// If there was a problem making the request then we need to tell the client that there
       /// was an internal error whilst making the request.
       if (!response.isSuccessful) {
-        _logger.info('There was an error making the request. Sending an internal error response');
+        _logger.info('There was an error making the request. Sending an internal error response. ${response.failure}');
         final internalErrorResponse = SnpInternalError(request.id);
         _sendToClient(response: internalErrorResponse, datagram: datagram);
         return;
@@ -256,9 +256,15 @@ class SnpServerUdpImpl {
       /// If the request was successful then we need to send the response back to the client.
       _logger.info('The request was made successfully. Sending the response back to the client');
       final clientResponse = SnpResponse(
+          id: request.id,
           success: true,
           status: 200,
-          payload: SnpSuccessPayload(response: response.content!.data, requests: requestsLeft));
+          payload: SnpSuccessPayload(response: {
+            "data": response.content!.data,
+            "headers": response.content!.headers.map,
+          }, requests: requestsLeft));
+
+      _logger.info('formed response being sent back is $clientResponse');
       _sendToClient(response: clientResponse, datagram: datagram);
 
       _logger.info(
@@ -277,7 +283,8 @@ class SnpServerUdpImpl {
       if (!_authTokens.contains(token)) {
         _logger.info(
             'Client ${datagram.address} has used an invalid token to authenticate. Sending an unauthorized response');
-        final unauthorizedResponse = SnpResponse(success: false, status: 401, payload: SnpUnauthorizedError.token());
+        final unauthorizedResponse =
+            SnpResponse(id: request.id, success: false, status: 401, payload: SnpUnauthorizedError.token());
         _sendToClient(response: unauthorizedResponse, datagram: datagram);
         return;
       }
@@ -295,7 +302,10 @@ class SnpServerUdpImpl {
 
       /// Send the success response back to the client.
       final successResponse = SnpResponse(
-          success: true, status: 200, payload: SnpResponsePayload(content: {"message": "You have been authenticated"}));
+          id: request.id,
+          success: true,
+          status: 200,
+          payload: SnpResponsePayload(content: {"message": "You have been authenticated"}));
       _sendToClient(response: successResponse, datagram: datagram);
     } else {
       // Return to the client with bad request response as there the path has not been specified.

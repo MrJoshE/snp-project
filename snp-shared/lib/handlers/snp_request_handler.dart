@@ -59,6 +59,7 @@ class SnpRequestHandler {
     }
 
     stage = 'Allowed type';
+    json['type'] = json['type'].toUpperCase();
     if (!allowedTypes.contains(json['type'])) {
       return SnpHandlerValidationResponse.failure('type', stage);
     }

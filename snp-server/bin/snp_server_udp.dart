@@ -1,6 +1,7 @@
 import 'package:logging/logging.dart';
 import 'package:snp_server/snp_server_config_impl.dart';
 import 'package:snp_server/snp_server_udp_impl.dart';
+import 'package:snp_shared/snp_shared.dart';
 
 Future<void> main() async {
   Logger.root.level = Level.ALL; // defaults to Level.INFO
@@ -13,6 +14,8 @@ Future<void> main() async {
     print('\t[${record.loggerName}]\t\t ${record.message}');
     lastLoggerName = record.loggerName;
   });
+
+  SnpRequestHandler.isLogging = true;
 
   final config = SnpServerConfigImpl();
 

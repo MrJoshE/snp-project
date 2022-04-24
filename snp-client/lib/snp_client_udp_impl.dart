@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:logging/logging.dart';
 import 'package:snp_client/abstract/snp_client.dart';
 import 'package:snp_client/abstract/snp_client_options.dart';
-import 'package:snp_shared/handlers/snp_packet_handler.dart';
 import 'package:snp_shared/snp_shared.dart';
 
 /// UDP implementation of the socket client.
@@ -40,8 +39,8 @@ class SnpClientUdpImpl extends SnpClient {
         'Please provide a proxy server address in the client options');
 
     try {
-      InternetAddress host = InternetAddress(_options.proxyServerAddress!);
-      _socket = await RawDatagramSocket.bind(host, 5000);
+      // InternetAddress host = InternetAddress(_options.proxyServerAddress!);
+      _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 5000);
       _socketSubscription = _socket.listen(_handleIncomingPacket);
       _hasInitialized = true;
       return DataResponse.success('Successfully initialized');
@@ -212,10 +211,13 @@ class SnpClientUdpImpl extends SnpClient {
     if (!_hasInitialized) return;
 
     _logger.info('The following payload is being sent to the server: ${request.toJson()}');
-
-    final packets = SnpPacketHandler.convertRequestToPackets(request);
-    for (final packet in packets) {
-      _socket.send(packet.packetData, InternetAddress(_options.proxyServerAddress!), _options.port);
+    try {
+      final packets = SnpPacketHandler.convertRequestToPackets(request);
+      for (final packet in packets) {
+        _socket.send(packet.packetData, InternetAddress(_options.proxyServerAddress!), _options.port);
+      }
+    } catch (e) {
+      _logger.severe('Unable to write to socket. Error: $e');
     }
   }
 

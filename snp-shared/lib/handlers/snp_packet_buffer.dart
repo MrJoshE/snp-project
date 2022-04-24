@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'snp_packet_handler.dart';
 import 'package:logging/logging.dart';
+
+import '../snp_shared.dart';
 
 class PacketBuffer {
   static final List<SnpPacket> _packets = [];
