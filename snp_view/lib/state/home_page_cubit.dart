@@ -56,7 +56,6 @@ class HomePageCubit extends Cubit<HomePageState> {
         : HomePageState.failed(connected: false, authenticated: false, failure: response.failure!));
   }
 
-  Future send() async {}
 
   void reset() {
     emit(const HomePageState.initial());

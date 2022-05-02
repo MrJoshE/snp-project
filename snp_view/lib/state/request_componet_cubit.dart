@@ -24,7 +24,7 @@ class RequestComponentCubit extends Cubit<RequestComponentState> {
       emit(RequestComponentState.loading());
       final request = SnpHttpRequest(method: method, path: path);
       final response = await _snpService.send(request);
-      print(response.content!.payload.content['content']);
+     
       if (response.isSuccessful == true) {
         emit(RequestComponentState.success(response.content!.payload.content['content']['response']['data'] as String));
       } else {

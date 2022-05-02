@@ -62,7 +62,7 @@ class SnpServerUdpImpl {
     _logger.info('is initializing');
     try {
       _serverSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, args?.port ?? SnpDefaultConfig.defaultPort);
-      _logger.shout('Listening on ${InternetAddress.loopbackIPv4.address}:${_serverSocket.port}');
+      _logger.shout('Listening on ${InternetAddress.anyIPv4.address}:${_serverSocket.port}');
 
       hasInitialized = true;
       _streamSubscription = _serverSocket.listen(handleIncomingPacket);

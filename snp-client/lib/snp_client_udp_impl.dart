@@ -216,8 +216,8 @@ class SnpClientUdpImpl extends SnpClient {
       for (final packet in packets) {
         _socket.send(packet.packetData, InternetAddress(_options.proxyServerAddress!), _options.port);
       }
-    } catch (e) {
-      _logger.severe('Unable to write to socket. Error: $e');
+    } catch (e, st) {
+      _logger.severe('Unable to write to socket. Error: $e. StackTrace: $st');
     }
   }
 

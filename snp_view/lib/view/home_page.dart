@@ -44,6 +44,8 @@ class HomePageView extends StatelessWidget {
             ));
           }
         },
+
+        
         builder: (context, state) {
           final isLoading = state.connectionStatus == ConnectionStatus.loading;
 

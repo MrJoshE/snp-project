@@ -63,13 +63,15 @@ class SnpPacketHandler {
 
   static List<int> getPayloadBytesFromPacketList(List<SnpPacket> packets) {
     final List<int> bytes = [];
-    for (final packet in packets) {
+  for (final packet in packets) {
       bytes.addAll(packet.payloadData);
     }
     return bytes;
   }
 
   static SnpPacket getPacketFromBytes(List<int> bytes) {
+    // Bytes are encrypted, so we need to decrypt them first
+    // this happens in the snp packet from bytes function
     final packet = SnpPacket.fromBytes(bytes);
     return packet;
   }
@@ -92,3 +94,18 @@ class SnpPacketHandler {
     return SnpRequest.fromJson(json.decode(utf8.decode(listOfBytes)));
   }
 }
+
+/**
+ * Flow
+ * 
+ * -------- Client --------
+ * 1. Client has request and wants to send to server
+ * 2. Packet handler turns the request into a list of packets
+ * 3. Client sends back the utf8 encoded json string of the packet
+ * 
+ * -------- Server -------
+ * 4. Server receives the utf8 encoded json string of the packets 
+ * 5. Packet handler converts the packet payloads to request object using the utf8 encoded request 
+ * in the packet payload.
+ * 
+ */

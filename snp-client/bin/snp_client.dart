@@ -14,10 +14,10 @@ Future main(List<String> arguments) async {
   SnpResponseHandler.isLogging = false;
 
   final options = SnpClientOptions(
-    proxyServerAddress: 'localhost',
+    proxyServerAddress: '131.227.65.151',
     token: 'josh',
   );
-
+ 
   final client = SnpClientImpl(options);
 
   final request = SnpHttpRequest(method: 'GET', path: 'https://www.google.com');
