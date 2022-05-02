@@ -1,4 +1,4 @@
-import 'package:snp_server/abstract/snp_server_config.dart';
+import 'server.dart';
 
 class SocketInformation {
   int totalRequests = 0;

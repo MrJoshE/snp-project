@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:snp_shared/snp_shared.dart';
 
 abstract class SnpServer {
+  bool get hasEncryption;
   static final httpClient = Dio();
   static List<String> validAuthTokens = [
     'josh',
@@ -13,15 +13,6 @@ abstract class SnpServer {
 
   /// Method will be used to start the socket server and start listening for clients.
   Future initialize();
-
-  /// Method will be used to handle the connection of a new socket client.
-  void onConnect(Socket socket);
-
-  /// Method will handle the socket server closing.
-  void onClose();
-
-  /// Method will any errors on the server.
-  void onError();
 
   /// Method will handling disposing of the sever.
   void dispose();

@@ -6,8 +6,8 @@ import 'package:snp_shared/snp_shared.dart';
 Future<void> main() async {
   registerLogger();
 
-  final options = SnpClientOptions(proxyServerAddress: '192.168.0.192', token: 'josh', port: 7788);
-  // final options = SnpClientOptions(proxyServerAddress: '127.0.0.1', token: 'josh', port: 1502);
+  // final options = SnpClientOptions(proxyServerAddress: '192.168.0.192', token: 'josh', port: 7788);
+  final options = SnpClientOptions(proxyServerAddress: '127.0.0.1', token: 'josh', port: 1502, useEncryption: true);
   final client = SnpClientUdpImpl(options);
 
   final dataResponse = await client.initialize();

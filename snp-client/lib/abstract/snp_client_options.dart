@@ -5,13 +5,13 @@ class SnpClientOptions {
   final String? proxyServerAddress;
   final int port;
   final int timeout;
-  final bool throwOnError;
+  final bool useEncryption;
 
   const SnpClientOptions({
     this.proxyServerAddress,
     this.token,
     this.port = SnpDefaultConfig.defaultPort,
     this.timeout = SnpDefaultConfig.defaultTimeout,
-    this.throwOnError = false,
+    required this.useEncryption,
   });
 }

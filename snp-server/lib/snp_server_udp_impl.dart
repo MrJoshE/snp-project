@@ -4,11 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
-import 'package:snp_server/abstract/snp_server_config.dart';
 import 'package:snp_shared/snp_shared.dart';
-
-import 'abstract/snp_server.dart';
-import 'abstract/snp_server_args.dart';
 
 class SnpRequestQueueItem {
   final SnpRequest request;
@@ -29,7 +25,7 @@ class DatagramInformation {
   }
 }
 
-class SnpServerUdpImpl {
+class SnpServerUdpImpl extends SnpServer {
   static final Logger _logger = Logger('SnpServerUdpImpl');
   late RawDatagramSocket _serverSocket;
   late StreamSubscription _streamSubscription;
@@ -39,6 +35,9 @@ class SnpServerUdpImpl {
   late final PacketBuffer _packetBuffer = PacketBuffer(
     (packets, datagram) => onLastPacketReceivedCallback(packets, datagram),
   );
+
+  @override
+  bool get hasEncryption => config.useEncryption;
 
   /// Valid auth tokens that a client has to use to authenticate.
   final List<String> _authTokens = [
@@ -56,8 +55,11 @@ class SnpServerUdpImpl {
   /// This is publically visible for testing purposes.
   bool isDisposed = false;
 
-  SnpServerUdpImpl(this.config);
+  final SnpPacketHandler _packetHandler;
 
+  SnpServerUdpImpl(this.config) : _packetHandler = SnpPacketHandler(useEncryption: config.useEncryption);
+
+  @override
   Future initialize({SnpServerArgs? args}) async {
     _logger.info('is initializing');
     try {
@@ -84,13 +86,23 @@ class SnpServerUdpImpl {
 
     try {
       final packetBytes = datagram.data;
-      final packet = SnpPacketHandler.getPacketFromBytes(packetBytes);
+      final packet = _packetHandler.getPacketFromBytes(packetBytes);
       _logger.info('Server has received the following packet: $packet');
       _packetBuffer.handlePacket(packet, datagram);
     } catch (e, st) {
       /// Could not convert the datagram to a list of packets
       ///
       _logger.severe('$e $st');
+
+      /// There has been an error so log it
+      _logger.severe('Could not convert the following data to a request object: $e. Error: $e');
+
+      /// We want to make a bad request response but we dont know whether we can use the id of the request
+      /// to we will try and use it but wont if we can't.
+      final badRequestErrorResponse = SnpBadRequestError(null);
+
+      /// Send the bad request response back to the client
+      _sendToClient(response: badRequestErrorResponse, datagram: datagram);
     }
   }
 
@@ -103,7 +115,7 @@ class SnpServerUdpImpl {
     }
 
     /// Get the request payload bytes from the finalized list of packets.
-    final requestBytes = SnpPacketHandler.getPayloadBytesFromPacketList(packets);
+    final requestBytes = _packetHandler.getPayloadBytesFromPacketList(packets);
 
     /// Send the full list of request bytes the next function.
     await handleFormedRequestBytes(requestBytes, datagram);
@@ -165,13 +177,14 @@ class SnpServerUdpImpl {
     required Datagram datagram,
   }) {
     /// Conver the response into packets and send back to client
-    final packets = SnpPacketHandler.convertResponseToPackets(response);
+    final packets = _packetHandler.convertResponseToPackets(response);
     _logger.info('Sending the following packets to the client: $packets');
     for (final packet in packets) {
-      _serverSocket.send(packet.packetData, datagram.address, datagram.port);
+      _serverSocket.send(packet.packetData(useEncryption: hasEncryption), datagram.address, datagram.port);
     }
   }
 
+  @override
   void dispose() {
     if (isDisposed) {
       _logger.severe('Cannot dispose server that is already disposesd.');

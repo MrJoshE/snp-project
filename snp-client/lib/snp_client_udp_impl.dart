@@ -13,13 +13,14 @@ import 'package:snp_shared/snp_shared.dart';
 class SnpClientUdpImpl extends SnpClient {
   final Logger _logger = Logger('SnpClientUdpImpl');
   final SnpClientOptions _options;
-  SnpClientUdpImpl(this._options);
+  SnpClientUdpImpl(this._options) : _packetHandler = SnpPacketHandler(useEncryption: _options.useEncryption);
 
   bool _hasInitialized = false;
   late final RawDatagramSocket _socket;
   late final StreamSubscription<RawSocketEvent> _socketSubscription;
   final StreamController<SnpResponse> _responseController = StreamController.broadcast();
   late StreamSubscription<SnpResponse> _responseSubscription;
+  final SnpPacketHandler _packetHandler;
 
   late final _packetBuffer = PacketBuffer(((packets, datagram) => onLastPacketReceivedCallback(packets, datagram)));
 
@@ -170,7 +171,7 @@ class SnpClientUdpImpl extends SnpClient {
 
     try {
       final packetBytes = datagram.data;
-      final packet = SnpPacketHandler.getPacketFromBytes(packetBytes);
+      final packet = _packetHandler.getPacketFromBytes(packetBytes);
       _logger.info('Client has received the following packet: $packet');
       _packetBuffer.handlePacket(packet, datagram);
     } catch (e) {
@@ -188,7 +189,7 @@ class SnpClientUdpImpl extends SnpClient {
     }
 
     /// Get the request payload bytes from the finalized list of packets.
-    final responseBytes = SnpPacketHandler.getPayloadBytesFromPacketList(packets);
+    final responseBytes = _packetHandler.getPayloadBytesFromPacketList(packets);
 
     /// Send the full list of request bytes the next function.
     _onReceivedMessage(responseBytes);
@@ -212,9 +213,10 @@ class SnpClientUdpImpl extends SnpClient {
 
     _logger.info('The following payload is being sent to the server: ${request.toJson()}');
     try {
-      final packets = SnpPacketHandler.convertRequestToPackets(request);
+      final packets = _packetHandler.convertRequestToPackets(request);
       for (final packet in packets) {
-        _socket.send(packet.packetData, InternetAddress(_options.proxyServerAddress!), _options.port);
+        _socket.send(packet.packetData(useEncryption: _options.useEncryption),
+            InternetAddress(_options.proxyServerAddress!), _options.port);
       }
     } catch (e, st) {
       _logger.severe('Unable to write to socket. Error: $e. StackTrace: $st');

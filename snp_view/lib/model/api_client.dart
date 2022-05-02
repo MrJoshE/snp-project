@@ -14,6 +14,7 @@ class ApiClient {
       proxyServerAddress: _config.proxyServerAddress,
       port: _config.port,
       token: _config.apiAuthToken,
+      useEncryption: true,
     ));
   }
 }

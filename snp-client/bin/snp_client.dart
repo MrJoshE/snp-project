@@ -16,8 +16,9 @@ Future main(List<String> arguments) async {
   final options = SnpClientOptions(
     proxyServerAddress: '131.227.65.151',
     token: 'josh',
+    useEncryption: false,
   );
- 
+
   final client = SnpClientImpl(options);
 
   final request = SnpHttpRequest(method: 'GET', path: 'https://www.google.com');

@@ -3,20 +3,23 @@ import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart';
 
-
 final _encrypter = Encrypter(AES(Key.fromUtf8('snppacketencrypt')));
 final _iv = IV.fromUtf8('super secret iv');
 
 class SnpPacket {
-
   final String id;
   final int packetNumber;
   final int totalPackets;
   final List<int> payloadData;
 
-  SnpPacket({required this.id, required this.packetNumber, required this.totalPackets, required this.payloadData,});
+  SnpPacket({
+    required this.id,
+    required this.packetNumber,
+    required this.totalPackets,
+    required this.payloadData,
+  });
 
-  List<int> get packetData => toBytes();
+  List<int> packetData({required bool useEncryption}) => toBytes(useEncryption);
 
   Map<String, dynamic> toJson() {
     return {
@@ -37,18 +40,26 @@ class SnpPacket {
     );
   }
 
-  factory SnpPacket.fromBytes(List<int> bytes) {
-    final _encryptedBytes = Encrypted(Uint8List.fromList(bytes));
-  
+  factory SnpPacket.fromBytes(List<int> bytes, {required bool useEncryption}) {
+    if (useEncryption) {
+      final _encryptedBytes = Encrypted(Uint8List.fromList(bytes));
+
       final decryptedPackets = _encrypter.decryptBytes(_encryptedBytes, iv: _iv);
-    final packet = json.decode(utf8.decode(decryptedPackets));
+      final packet = json.decode(utf8.decode(decryptedPackets));
+      return SnpPacket.fromJson(packet);
+    }
+
+    final packet = json.decode(utf8.decode(bytes));
     return SnpPacket.fromJson(packet);
   }
 
-  List<int> toBytes() {
-    final bytes = utf8.encode(json.encode(toJson()));
-    final encryptedBytes = _encrypter.encryptBytes(bytes, iv: _iv);
-    return encryptedBytes.bytes;
+  List<int> toBytes([bool useEncryption = false]) {
+    if (useEncryption) {
+      final bytes = utf8.encode(json.encode(toJson()));
+      final encryptedBytes = _encrypter.encryptBytes(bytes, iv: _iv);
+      return encryptedBytes.bytes;
+    }
+    return utf8.encode(json.encode(toJson()));
   }
 
   @override

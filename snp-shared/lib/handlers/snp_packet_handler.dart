@@ -4,8 +4,11 @@ import '../snp_shared.dart';
 
 class SnpPacketHandler {
   static const int maxPacketSize = 1024;
+  final bool useEncryption;
 
-  static List<SnpPacket> convertResponseToPackets(SnpResponse response) {
+  const SnpPacketHandler({required this.useEncryption});
+
+  List<SnpPacket> convertResponseToPackets(SnpResponse response) {
     final List<SnpPacket> packets = [];
 
     final responseBytes = utf8.encode(json.encode(response.toJson()));
@@ -33,7 +36,7 @@ class SnpPacketHandler {
     return packets;
   }
 
-  static List<SnpPacket> convertRequestToPackets(SnpRequest request) {
+  List<SnpPacket> convertRequestToPackets(SnpRequest request) {
     final List<SnpPacket> packets = [];
 
     final requestBytes = utf8.encode(json.encode(request.toJson()));
@@ -61,22 +64,22 @@ class SnpPacketHandler {
     return packets;
   }
 
-  static List<int> getPayloadBytesFromPacketList(List<SnpPacket> packets) {
+  List<int> getPayloadBytesFromPacketList(List<SnpPacket> packets) {
     final List<int> bytes = [];
-  for (final packet in packets) {
+    for (final packet in packets) {
       bytes.addAll(packet.payloadData);
     }
     return bytes;
   }
 
-  static SnpPacket getPacketFromBytes(List<int> bytes) {
+  SnpPacket getPacketFromBytes(List<int> bytes) {
     // Bytes are encrypted, so we need to decrypt them first
     // this happens in the snp packet from bytes function
-    final packet = SnpPacket.fromBytes(bytes);
+    final packet = SnpPacket.fromBytes(bytes, useEncryption: useEncryption);
     return packet;
   }
 
-  static SnpResponse getResponseFromPacketList(List<SnpPacket> packets) {
+  SnpResponse getResponseFromPacketList(List<SnpPacket> packets) {
     final List<int> listOfBytes = [];
     for (final packet in packets) {
       listOfBytes.addAll(packet.payloadData);
@@ -85,7 +88,7 @@ class SnpPacketHandler {
     return SnpResponse.fromJson(json.decode(utf8.decode(listOfBytes)));
   }
 
-  static SnpRequest getRequestFromPacketList(List<SnpPacket> packets) {
+  SnpRequest getRequestFromPacketList(List<SnpPacket> packets) {
     final List<int> listOfBytes = [];
     for (final packet in packets) {
       listOfBytes.addAll(packet.payloadData);
